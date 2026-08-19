@@ -1,0 +1,65 @@
+{
+  "Comment": "Poller -> Glue -> Athena partition refresh, with failure alerting",
+  "StartAt": "InvokePoller",
+  "States": {
+    "InvokePoller": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:ap-south-1:<YOUR_ACCOUNT_ID>:function:email-poller"
+      },
+      "ResultPath": "$.pollerResult",
+      "Retry": [
+        {
+          "ErrorEquals": ["Lambda.TooManyRequestsException", "Lambda.ServiceException"],
+          "IntervalSeconds": 5,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Catch": [
+        { "ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "NotifyFailure" }
+      ],
+      "Next": "WaitForParser"
+    },
+    "WaitForParser": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "RunGlueJob"
+    },
+    "RunGlueJob": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": { "JobName": "order-reconciliation" },
+      "ResultPath": "$.glueResult",
+      "Catch": [
+        { "ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "NotifyFailure" }
+      ],
+      "Next": "RefreshAthenaPartitions"
+    },
+    "RefreshAthenaPartitions": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::athena:startQueryExecution.sync",
+      "Parameters": {
+        "QueryString": "MSCK REPAIR TABLE orders_gold",
+        "QueryExecutionContext": { "Database": "email_pipeline" },
+        "ResultConfiguration": { "OutputLocation": "s3://<YOUR-ATHENA-RESULTS-BUCKET>/" }
+      },
+      "Catch": [
+        { "ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "NotifyFailure" }
+      ],
+      "Next": "PipelineSucceeded"
+    },
+    "NotifyFailure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "arn:aws:sns:ap-south-1:<YOUR_ACCOUNT_ID>:pipeline-alerts",
+        "Message.$": "States.Format('Email pipeline run failed: {}', $.error.Cause)"
+      },
+      "Next": "PipelineFailed"
+    },
+    "PipelineFailed": { "Type": "Fail" },
+    "PipelineSucceeded": { "Type": "Succeed" }
+  }
+}

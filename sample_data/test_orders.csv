@@ -1,0 +1,7 @@
+order_id,customer_id,product,category,quantity,unit_price,order_date,status
+a1b2c3d4-0001,cust-1001,Wireless Mouse,Electronics,2,19.99,2026-08-10,pending
+a1b2c3d4-0002,cust-1002,Coffee Table,Home,1,149.50,2026-08-11,shipped
+a1b2c3d4-0003,cust-1003,Notebook Set,Books,5,4.25,2026-08-11,delivered
+a1b2c3d4-0004,cust-1004,Running Shoes,Clothing,1,89.99,2026-08-12,pending
+a1b2c3d4-0005,cust-1005,Building Blocks,Toys,3,24.75,2026-08-12,cancelled
+a1b2c3d4-0006,cust-1006,Bluetooth Speaker,Electronics,1,59.00,2026-08-13,shipped
