@@ -123,7 +123,7 @@ left out of version control rather than committed with real values.
 3. `pip install -r dashboard/requirements.txt && streamlit run dashboard/dashboard.py`
    to view revenue-by-day and revenue-by-category.
 
-## Resume summary
+## summary
 
 > Built a serverless, event-driven order-processing pipeline on AWS (Lambda,
 > S3, Glue/PySpark, DynamoDB, Athena) with idempotent ingestion, multi-format
