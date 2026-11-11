@@ -123,6 +123,23 @@ left out of version control rather than committed with real values.
 3. `pip install -r dashboard/requirements.txt && streamlit run dashboard/dashboard.py`
    to view revenue-by-day and revenue-by-category.
 
+   
+   ## Testing
+
+Unit tests cover the two Lambda functions (the Gmail poller and the attachment parser). They run without an AWS account: boto3 and IMAP are mocked.
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+| Area | What is tested |
+|---|---|
+| Poller | UID checkpoint read/save, "no checkpoint yet" start, new emails archived to S3 with the right key, checkpoint advances only when something was processed, failed fetch/S3 writes counted without stopping the run, IMAP login errors raised and connection closed |
+| Parser | CSV/JSON/Parquet reading, silver S3 key layout, unsupported or extension-less attachments skipped, corrupt files counted as failed, order totals computed, high-value SNS alert (strictly above the threshold), malformed rows skipped without stopping the batch |
+
+GitHub Actions runs the same tests on every push and pull request (`.github/workflows/tests.yml`).
+
 ## summary
 
 > Built a serverless, event-driven order-processing pipeline on AWS (Lambda,
